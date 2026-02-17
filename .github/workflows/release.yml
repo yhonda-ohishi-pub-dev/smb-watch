@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - main
 
 env:
   CARGO_TERM_COLOR: always
@@ -31,20 +31,49 @@ jobs:
           cache-all-crates: true
           shared-key: "release"
 
+      - name: Get version from Cargo.toml
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"').Matches[0].Groups[1].Value
+          $tag = "v$version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+          echo "Version: $version, Tag: $tag"
+
+      - name: Check if tag already exists
+        id: tag_check
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          $exists = git tag --list $tag
+          if ($exists) {
+            echo "exists=true" >> $env:GITHUB_OUTPUT
+            echo "Tag $tag already exists, skipping release."
+          } else {
+            echo "exists=false" >> $env:GITHUB_OUTPUT
+            echo "Tag $tag does not exist, proceeding with release."
+          }
+
       - name: Build release binary
+        if: steps.tag_check.outputs.exists == 'false'
         run: cargo build --release --target x86_64-pc-windows-msvc --locked
 
       - name: Install cargo-wix
+        if: steps.tag_check.outputs.exists == 'false'
         run: cargo install cargo-wix --version "0.3.9" --locked
 
       - name: Add WiX v3 to PATH
+        if: steps.tag_check.outputs.exists == 'false'
         shell: bash
         run: echo "C:/Program Files (x86)/WiX Toolset v3.11/bin" >> "$GITHUB_PATH"
 
       - name: Build MSI installer
+        if: steps.tag_check.outputs.exists == 'false'
         run: cargo wix --target x86_64-pc-windows-msvc --nocapture
 
       - name: Locate MSI artifact
+        if: steps.tag_check.outputs.exists == 'false'
         id: msi
         shell: pwsh
         run: |
@@ -52,15 +81,17 @@ jobs:
           echo "path=$($msi.FullName)" >> $env:GITHUB_OUTPUT
           echo "name=$($msi.Name)" >> $env:GITHUB_OUTPUT
 
-      - name: Get release version
-        id: version
+      - name: Create tag
+        if: steps.tag_check.outputs.exists == 'false'
         shell: bash
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
 
       - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
