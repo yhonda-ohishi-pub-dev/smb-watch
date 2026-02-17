@@ -11,7 +11,8 @@ smb-watch のリリースを行います。引数: `$ARGUMENTS`
 1. **現在の状態を確認する**（Bash / Read ツールを使うこと）
    - `Cargo.toml` を読んで現在の version を確認
    - `git status` で未コミットの変更がないか確認
-   - 未コミットの変更がある場合はユーザーに警告して中断する
+   - 未コミットの変更（modified / untracked）がある場合はユーザーに警告して中断する
+   - `.claude/settings.local.json` は `.gitignore` 済みのため無視してよい
 
 2. **引数の解釈**
    - 引数なし → `patch` として扱う
@@ -39,3 +40,4 @@ smb-watch のリリースを行います。引数: `$ARGUMENTS`
 - タグ push 後、GitHub Actions が自動で MSI をビルドして GitHub Release を公開する
 - UpgradeCode (`D802E510-9F08-408B-BFFD-B0B491E7F908`) は変更禁止
 - MSI の ProductVersion は `Cargo.toml` の version から自動同期される
+- **GitHub Actions のキャッシュはタグ push 間で共有されない**（GitHub の仕様）。`cache-warmup.yml` が main push 時にキャッシュを作成し、タグ push 時はそのキャッシュが使われる
