@@ -1,2 +1,2 @@
 publish = false
-push-tags = false
+tag = false
