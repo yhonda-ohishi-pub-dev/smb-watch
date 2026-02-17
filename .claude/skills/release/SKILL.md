@@ -40,4 +40,4 @@ smb-watch のリリースを行います。引数: `$ARGUMENTS`
 - タグ push 後、GitHub Actions が自動で MSI をビルドして GitHub Release を公開する
 - UpgradeCode (`D802E510-9F08-408B-BFFD-B0B491E7F908`) は変更禁止
 - MSI の ProductVersion は `Cargo.toml` の version から自動同期される
-- **GitHub Actions のキャッシュはタグ push 間で共有されない**（GitHub の仕様）。`cache-warmup.yml` が main push 時にキャッシュを作成し、タグ push 時はそのキャッシュが使われる
+- タグ push 時は main ブランチのキャッシュが restore される（`shared-key` 設定済み）
