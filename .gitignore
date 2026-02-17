@@ -1,4 +1,5 @@
 /target
+.claude/settings.local.json
 last_run.txt
 failed_files.txt
 *.log
