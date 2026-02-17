@@ -24,7 +24,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 [profile.release]
 opt-level = 3
 strip = true
-lto = true
+lto = "thin"
 
 [package.metadata.wix]
 upgrade-guid = "D802E510-9F08-408B-BFFD-B0B491E7F908"
