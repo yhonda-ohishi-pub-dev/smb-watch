@@ -25,3 +25,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 opt-level = 3
 strip = true
 lto = true
+
+[package.metadata.wix]
+upgrade-guid = "D802E510-9F08-408B-BFFD-B0B491E7F908"

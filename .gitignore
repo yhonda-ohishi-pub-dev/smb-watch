@@ -2,3 +2,8 @@
 last_run.txt
 failed_files.txt
 *.log
+
+# WiX build artifacts (wix/main.wxs is tracked; only compiled outputs are excluded)
+target/wix/
+wix/*.wixobj
+wix/*.wixpdb
