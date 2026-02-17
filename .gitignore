@@ -1,0 +1,4 @@
+/target
+last_run.txt
+failed_files.txt
+*.log
