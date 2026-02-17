@@ -45,12 +45,17 @@ async fn run(config: &cli::Config, drive_letter: &str, scan_start: SystemTime) -
         retry_candidates.retain(|p| p.exists());
     }
 
-    // 2. Read last run timestamp and scan for new/changed files
-    let last_run = state::read_last_run(&config.state_file)?;
+    // 2. Resolve "since" threshold: --since flag takes precedence over last_run.txt
+    let since: SystemTime = if let Some(dt) = config.since {
+        info!("Using --since override: {}", dt.to_rfc3339());
+        SystemTime::from(dt)
+    } else {
+        state::read_last_run(&config.state_file)?
+    };
     let scan_root = PathBuf::from(format!("{}\\{}", drive_letter, config.smb_path));
     info!("Scanning: {}", scan_root.display());
 
-    let changed_files = scanner::find_changed_files(&scan_root, last_run)?;
+    let changed_files = scanner::find_changed_files(&scan_root, since)?;
 
     // 3. Merge: changed files + retries, deduplicated
     let retry_set: HashSet<PathBuf> = retry_candidates.into_iter().collect();

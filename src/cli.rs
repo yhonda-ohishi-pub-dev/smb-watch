@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -46,4 +47,15 @@ pub struct Config {
     /// Log level: error, warn, info, debug, trace
     #[arg(long, default_value = "info")]
     pub log_level: String,
+
+    /// スキャン基準時刻を上書き。RFC3339形式 (例: 2026-02-10T00:00:00Z)。
+    /// 指定すると last_run.txt より優先される。
+    #[arg(long, value_name = "DATETIME", value_parser = parse_since)]
+    pub since: Option<DateTime<Utc>>,
+}
+
+fn parse_since(s: &str) -> std::result::Result<DateTime<Utc>, String> {
+    DateTime::parse_from_rfc3339(s)
+        .map(|dt| dt.with_timezone(&Utc))
+        .map_err(|e| format!("Invalid RFC3339 datetime '{}': {}", s, e))
 }
