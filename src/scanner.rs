@@ -38,5 +38,6 @@ pub fn find_changed_files(root: &Path, since: SystemTime) -> Result<Vec<PathBuf>
         }
     }
 
+    changed.sort();
     Ok(changed)
 }
