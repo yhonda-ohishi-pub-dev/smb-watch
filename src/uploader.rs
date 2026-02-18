@@ -18,7 +18,12 @@ pub fn build_client() -> Result<reqwest::Client> {
         .context("Building HTTP client")
 }
 
-pub async fn upload_file(client: &reqwest::Client, url: &str, path: &Path) -> Result<()> {
+pub async fn upload_file(
+    client: &reqwest::Client,
+    url: &str,
+    path: &Path,
+    token: Option<&str>,
+) -> Result<()> {
     let bytes = tokio::fs::read(path)
         .await
         .with_context(|| format!("Reading file {}", path.display()))?;
@@ -41,9 +46,12 @@ pub async fn upload_file(client: &reqwest::Client, url: &str, path: &Path) -> Re
         .part("data", data_part)
         .text("from", "front");
 
-    let response = client
-        .post(url)
-        .multipart(form)
+    let mut request = client.post(url).multipart(form);
+    if let Some(t) = token {
+        request = request.bearer_auth(t);
+    }
+
+    let response = request
         .send()
         .await
         .with_context(|| format!("POST to {}", url))?;

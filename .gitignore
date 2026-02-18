@@ -8,3 +8,6 @@ failed_files.txt
 target/wix/
 wix/*.wixobj
 wix/*.wixpdb
+
+# Reference repositories
+rust-logi_ref/

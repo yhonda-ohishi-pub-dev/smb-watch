@@ -1,3 +1,4 @@
+mod auth;
 mod cli;
 mod scanner;
 mod smb;
@@ -88,9 +89,20 @@ async fn run(config: &cli::Config, drive_letter: &str, scan_start: SystemTime) -
         let client = uploader::build_client()?;
         let upload_url = format!("{}/api/recieve", config.upload_url.trim_end_matches('/'));
 
+        // Authenticate if auth options are provided
+        let token = match (&config.auth_user, &config.auth_pass, &config.auth_url) {
+            (Some(user), Some(pass), Some(url)) => {
+                Some(auth::login(&client, url, user, pass).await?)
+            }
+            (None, None, None) => None,
+            _ => anyhow::bail!(
+                "--auth-user, --auth-pass, --auth-url must all be specified together"
+            ),
+        };
+
         for (i, path) in all_files.iter().enumerate() {
             info!("Uploading {}/{}: {}", i + 1, files_found, path.display());
-            match uploader::upload_file(&client, &upload_url, path).await {
+            match uploader::upload_file(&client, &upload_url, path, token.as_deref()).await {
                 Ok(()) => uploaded += 1,
                 Err(e) => {
                     warn!("Failed: {}: {:#}", path.display(), e);

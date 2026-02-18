@@ -52,6 +52,18 @@ pub struct Config {
     /// 指定すると last_run.txt より優先される。
     #[arg(long, value_name = "DATETIME", value_parser = parse_since)]
     pub since: Option<DateTime<Utc>>,
+
+    /// Auth username (Worker login)
+    #[arg(long, env = "SMB_WATCH_AUTH_USER")]
+    pub auth_user: Option<String>,
+
+    /// Auth password (Worker login)
+    #[arg(long, env = "SMB_WATCH_AUTH_PASS", hide_env_values = true)]
+    pub auth_pass: Option<String>,
+
+    /// Auth login URL (e.g. https://smb-upload-worker.xxx.workers.dev/auth/login)
+    #[arg(long, env = "SMB_WATCH_AUTH_URL")]
+    pub auth_url: Option<String>,
 }
 
 fn parse_since(s: &str) -> std::result::Result<DateTime<Utc>, String> {
