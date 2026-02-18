@@ -13,6 +13,8 @@ struct LoginResponse {
     token: String,
     #[serde(rename = "expiresAt")]
     expires_at: String,
+    #[serde(rename = "organizationId")]
+    organization_id: String,
 }
 
 pub async fn login(
@@ -20,7 +22,7 @@ pub async fn login(
     auth_url: &str,
     user: &str,
     pass: &str,
-) -> Result<String> {
+) -> Result<(String, String)> {
     let resp = client
         .post(auth_url)
         .json(&LoginRequest {
@@ -39,5 +41,5 @@ pub async fn login(
 
     let login_resp: LoginResponse = resp.json().await.context("Parsing login response")?;
     info!("Authenticated, token expires at {}", login_resp.expires_at);
-    Ok(login_resp.token)
+    Ok((login_resp.token, login_resp.organization_id))
 }

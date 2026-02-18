@@ -23,6 +23,7 @@ pub async fn upload_file(
     url: &str,
     path: &Path,
     token: Option<&str>,
+    org_id: Option<&str>,
 ) -> Result<()> {
     let bytes = tokio::fs::read(path)
         .await
@@ -49,6 +50,9 @@ pub async fn upload_file(
     let mut request = client.post(url).multipart(form);
     if let Some(t) = token {
         request = request.bearer_auth(t);
+    }
+    if let Some(id) = org_id {
+        request = request.header("x-organization-id", id);
     }
 
     let response = request
