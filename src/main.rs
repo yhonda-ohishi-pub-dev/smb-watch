@@ -109,7 +109,7 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
             }
             // 認証なし → Google OAuth
             (None, None, None) => {
-                let id_token = google_auth::device_flow_get_id_token(&client, &config.google_client_id).await?;
+                let id_token = google_auth::device_flow_get_id_token(&client, &config.google_client_id, &config.google_client_secret).await?;
                 let google_auth_url = format!("{}/auth/google", config.google_auth_worker_url.trim_end_matches('/'));
                 let (t, id) = auth::login_with_google(&client, &google_auth_url, &id_token).await?;
                 (Some(t), Some(id))

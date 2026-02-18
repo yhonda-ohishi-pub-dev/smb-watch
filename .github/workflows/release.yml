@@ -48,6 +48,10 @@ jobs:
 
       - name: Build MSI installer
         run: cargo wix --target x86_64-pc-windows-msvc --nocapture
+        env:
+          DEFAULT_GOOGLE_CLIENT_ID: ${{ secrets.DEFAULT_GOOGLE_CLIENT_ID }}
+          DEFAULT_GOOGLE_CLIENT_SECRET: ${{ secrets.DEFAULT_GOOGLE_CLIENT_SECRET }}
+          DEFAULT_WORKER_URL: ${{ secrets.DEFAULT_WORKER_URL }}
 
       - name: Locate MSI artifact
         id: msi

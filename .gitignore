@@ -3,6 +3,10 @@
 last_run.txt
 failed_files.txt
 *.log
+google_token_cache.json
+client_secret_*.json
+.wrangler/
+.env.build
 
 # WiX build artifacts (wix/main.wxs is tracked; only compiled outputs are excluded)
 target/wix/

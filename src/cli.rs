@@ -69,16 +69,26 @@ pub struct Config {
     #[arg(
         long,
         env = "GOOGLE_CLIENT_ID",
-        default_value = "747065218280-sa8nsr1o24m6pu6l0p51ekj9nsgh7uch.apps.googleusercontent.com",
+        default_value = env!("DEFAULT_GOOGLE_CLIENT_ID"),
         conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
     )]
     pub google_client_id: String,
+
+    /// Google OAuth 2.0 Client Secret (Device Flow トークンポーリング用)
+    #[arg(
+        long,
+        env = "GOOGLE_CLIENT_SECRET",
+        default_value = env!("DEFAULT_GOOGLE_CLIENT_SECRET"),
+        hide_env_values = true,
+        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
+    )]
+    pub google_client_secret: String,
 
     /// smb-upload-worker のベース URL (Google OAuth 認証用)
     #[arg(
         long,
         env = "SMB_WATCH_UPLOAD_WORKER_URL",
-        default_value = "https://smb-upload-worker.yhonda-ohishi-pub-dev.workers.dev",
+        default_value = env!("DEFAULT_WORKER_URL"),
         conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
     )]
     pub google_auth_worker_url: String,
