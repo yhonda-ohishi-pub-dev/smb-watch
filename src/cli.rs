@@ -65,6 +65,24 @@ pub struct Config {
     #[arg(long, env = "SMB_WATCH_AUTH_URL")]
     pub auth_url: Option<String>,
 
+    /// Google OAuth 2.0 Client ID (Device Flow 認証用)
+    /// --google-auth-worker-url と一緒に指定する。--auth-user/--auth-pass/--auth-url とは併用不可。
+    #[arg(
+        long,
+        env = "GOOGLE_CLIENT_ID",
+        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
+    )]
+    pub google_client_id: Option<String>,
+
+    /// smb-upload-worker のベース URL (Google OAuth 認証用)
+    /// --google-client-id と一緒に指定する。/auth/google と /upload エンドポイントに使用される。
+    #[arg(
+        long,
+        env = "SMB_WATCH_UPLOAD_WORKER_URL",
+        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
+    )]
+    pub google_auth_worker_url: Option<String>,
+
     /// Local directory path to monitor (enables local mode, skips SMB mount)
     #[arg(long, value_name = "PATH")]
     pub local_path: Option<std::path::PathBuf>,

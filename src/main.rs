@@ -1,5 +1,6 @@
 mod auth;
 mod cli;
+mod google_auth;
 mod scanner;
 mod smb;
 mod state;
@@ -100,21 +101,46 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
         let client = uploader::build_client()?;
 
         // Authenticate if auth options are provided
-        let (token, org_id) = match (&config.auth_user, &config.auth_pass, &config.auth_url) {
-            (Some(user), Some(pass), Some(url)) => {
+        let (token, org_id) = match (
+            &config.google_client_id,
+            &config.google_auth_worker_url,
+            &config.auth_user,
+            &config.auth_pass,
+            &config.auth_url,
+        ) {
+            // Google OAuth モード
+            (Some(client_id), Some(worker_url), None, None, None) => {
+                let id_token = google_auth::device_flow_get_id_token(&client, client_id).await?;
+                let google_auth_url = format!("{}/auth/google", worker_url.trim_end_matches('/'));
+                let (t, id) = auth::login_with_google(&client, &google_auth_url, &id_token).await?;
+                (Some(t), Some(id))
+            }
+            // 既存のパスワード認証モード
+            (None, None, Some(user), Some(pass), Some(url)) => {
                 let (t, id) = auth::login(&client, url, user, pass).await?;
                 (Some(t), Some(id))
             }
-            (None, None, None) => (None, None),
+            // 認証なし
+            (None, None, None, None, None) => (None, None),
+            // 不完全な Google 設定
+            (Some(_), None, ..) | (None, Some(_), ..) => anyhow::bail!(
+                "--google-client-id と --google-auth-worker-url は両方必要です"
+            ),
             _ => anyhow::bail!(
                 "--auth-user, --auth-pass, --auth-url must all be specified together"
             ),
         };
 
-        let upload_url = if token.is_some() {
-            format!("{}/upload", config.upload_url.trim_end_matches('/'))
-        } else {
-            format!("{}/api/recieve", config.upload_url.trim_end_matches('/'))
+        let upload_url = match (&token, &config.google_auth_worker_url) {
+            (Some(_), Some(worker_url)) => {
+                format!("{}/upload", worker_url.trim_end_matches('/'))
+            }
+            (Some(_), None) => {
+                format!("{}/upload", config.upload_url.trim_end_matches('/'))
+            }
+            _ => {
+                format!("{}/api/recieve", config.upload_url.trim_end_matches('/'))
+            }
         };
 
         for (i, path) in all_files.iter().enumerate() {
