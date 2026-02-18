@@ -22,10 +22,15 @@ SMB 共有フォルダを監視し、変更されたファイルを HTTP でア�
 | `--smb-pass` | - | `SMB_PASS` |
 | `--smb-domain` | `` | `SMB_DOMAIN` |
 | `--upload-url` | `https://nuxt-pwa-carins.mtamaramu.com` | `UPLOAD_URL` |
+| `--auth-user` | - | `SMB_WATCH_AUTH_USER` |
+| `--auth-pass` | - | `SMB_WATCH_AUTH_PASS` |
+| `--auth-url` | - | `SMB_WATCH_AUTH_URL` |
 | `--drive-letter` | `Z:` | - |
 | `--dry-run` | `false` | - |
 
 アップロード先エンドポイント: `POST /api/recieve` (multipart/form-data)
+
+`--auth-user`, `--auth-pass`, `--auth-url` を全て指定すると、Worker (`smb-upload-worker`) 経由の JWT 認証付きアップロードに切り替わる。3 つとも指定するか、全て省略するかのどちらか。
 
 ---
 
