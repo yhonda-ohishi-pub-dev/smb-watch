@@ -11,3 +11,6 @@ wix/*.wixpdb
 
 # Reference repositories
 rust-logi_ref/
+
+# Worker (separate project)
+smb-upload-worker/
