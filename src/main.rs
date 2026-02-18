@@ -25,17 +25,29 @@ async fn main() -> Result<()> {
 
     let scan_start = SystemTime::now();
 
-    let mount = smb::SmbMount::mount(&config)?;
-    let result = run(&config, &mount.drive_letter, scan_start).await;
+    if let Some(local_path) = &config.local_path {
+        info!("Local mode: monitoring {}", local_path.display());
+        run(&config, local_path, scan_start).await
+    } else {
+        if config.smb_user.is_none() || config.smb_pass.is_none() {
+            anyhow::bail!(
+                "--smb-user and --smb-pass (or SMB_USER/SMB_PASS env vars) are required for SMB mode. \
+                 Use --local-path for local mode."
+            );
+        }
+        let mount = smb::SmbMount::mount(&config)?;
+        let scan_path = PathBuf::from(format!("{}\\{}", mount.drive_letter, config.smb_path));
+        let result = run(&config, &scan_path, scan_start).await;
 
-    if let Err(e) = mount.unmount() {
-        warn!("Failed to unmount SMB share: {:#}", e);
+        if let Err(e) = mount.unmount() {
+            warn!("Failed to unmount SMB share: {:#}", e);
+        }
+
+        result
     }
-
-    result
 }
 
-async fn run(config: &cli::Config, drive_letter: &str, scan_start: SystemTime) -> Result<()> {
+async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: SystemTime) -> Result<()> {
     let failed_list_path = state::failed_list_path(&config.state_file);
 
     // 1. Load previously failed files (retry candidates)
@@ -53,10 +65,9 @@ async fn run(config: &cli::Config, drive_letter: &str, scan_start: SystemTime) -
     } else {
         state::read_last_run(&config.state_file)?
     };
-    let scan_root = PathBuf::from(format!("{}\\{}", drive_letter, config.smb_path));
     info!("Scanning: {}", scan_root.display());
 
-    let changed_files = scanner::find_changed_files(&scan_root, since)?;
+    let changed_files = scanner::find_changed_files(scan_root, since)?;
 
     // 3. Merge: changed files + retries, deduplicated
     let retry_set: HashSet<PathBuf> = retry_candidates.into_iter().collect();

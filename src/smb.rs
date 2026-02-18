@@ -31,10 +31,12 @@ impl SmbMount {
         }
 
         // Build user argument: DOMAIN\user or just user
+        let smb_user = config.smb_user.as_deref().unwrap_or("");
+        let smb_pass = config.smb_pass.as_deref().unwrap_or("");
         let user_arg = if config.smb_domain.is_empty() {
-            config.smb_user.clone()
+            smb_user.to_string()
         } else {
-            format!("{}\\{}", config.smb_domain, config.smb_user)
+            format!("{}\\{}", config.smb_domain, smb_user)
         };
 
         info!("Mounting {} -> {}", drive, unc);
@@ -44,7 +46,7 @@ impl SmbMount {
                 "use",
                 drive,
                 &unc,
-                &config.smb_pass,
+                smb_pass,
                 &format!("/user:{}", user_arg),
                 "/persistent:no",
             ])

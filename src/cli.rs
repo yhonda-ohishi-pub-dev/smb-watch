@@ -16,13 +16,13 @@ pub struct Config {
     #[arg(long, default_value = "新車検証")]
     pub smb_path: String,
 
-    /// SMB username
+    /// SMB username (required for SMB mode, ignored in local mode)
     #[arg(long, env = "SMB_USER")]
-    pub smb_user: String,
+    pub smb_user: Option<String>,
 
-    /// SMB password
+    /// SMB password (required for SMB mode, ignored in local mode)
     #[arg(long, env = "SMB_PASS", hide_env_values = true)]
-    pub smb_pass: String,
+    pub smb_pass: Option<String>,
 
     /// SMB domain (optional)
     #[arg(long, env = "SMB_DOMAIN", default_value = "")]
@@ -64,6 +64,10 @@ pub struct Config {
     /// Auth login URL (e.g. https://smb-upload-worker.xxx.workers.dev/auth/login)
     #[arg(long, env = "SMB_WATCH_AUTH_URL")]
     pub auth_url: Option<String>,
+
+    /// Local directory path to monitor (enables local mode, skips SMB mount)
+    #[arg(long, value_name = "PATH")]
+    pub local_path: Option<std::path::PathBuf>,
 }
 
 fn parse_since(s: &str) -> std::result::Result<DateTime<Utc>, String> {
