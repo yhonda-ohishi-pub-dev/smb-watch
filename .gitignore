@@ -4,6 +4,7 @@ last_run.txt
 failed_files.txt
 *.log
 google_token_cache.json
+organization_config.json
 client_secret_*.json
 .wrangler/
 .env.build

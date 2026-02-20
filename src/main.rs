@@ -1,6 +1,7 @@
 mod auth;
 mod cli;
 mod google_auth;
+mod org_config;
 mod scanner;
 mod smb;
 mod state;
@@ -107,12 +108,22 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
                 let (t, id) = auth::login(&client, url, user, pass).await?;
                 (Some(t), Some(id))
             }
-            // 認証なし → Google OAuth
+            // 認証なし → Google OAuth + 組織選択
             (None, None, None) => {
                 let id_token = google_auth::device_flow_get_id_token(&client, &config.google_client_id, &config.google_client_secret).await?;
                 let google_auth_url = format!("{}/auth/google", config.google_auth_worker_url.trim_end_matches('/'));
-                let (t, id) = auth::login_with_google(&client, &google_auth_url, &id_token).await?;
-                (Some(t), Some(id))
+                let (t, jwt_org_id) = auth::login_with_google(&client, &google_auth_url, &id_token).await?;
+
+                // 組織解決: CLI > 端末保存 > サーバー取得+選択 > JWTデフォルト
+                let resolved_org = org_config::resolve_organization(
+                    &client,
+                    config.organization_id.as_deref(),
+                    config.google_auth_worker_url.trim_end_matches('/'),
+                    &t,
+                    &jwt_org_id,
+                ).await?;
+
+                (Some(t), Some(resolved_org))
             }
             _ => anyhow::bail!(
                 "--auth-user, --auth-pass, --auth-url must all be specified together"

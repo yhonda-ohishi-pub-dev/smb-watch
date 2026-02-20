@@ -25,12 +25,26 @@ SMB 共有フォルダを監視し、変更されたファイルを HTTP でア�
 | `--auth-user` | - | `SMB_WATCH_AUTH_USER` |
 | `--auth-pass` | - | `SMB_WATCH_AUTH_PASS` |
 | `--auth-url` | - | `SMB_WATCH_AUTH_URL` |
+| `--organization-id` | - | `ORGANIZATION_ID` |
 | `--drive-letter` | `Z:` | - |
 | `--dry-run` | `false` | - |
 
 アップロード先エンドポイント: `POST /api/recieve` (multipart/form-data)
 
 `--auth-user`, `--auth-pass`, `--auth-url` を全て指定すると、Worker (`smb-upload-worker`) 経由の JWT 認証付きアップロードに切り替わる。3 つとも指定するか、全て省略するかのどちらか。
+
+### 組織選択（Google OAuth モード）
+
+Google OAuth 認証時、ユーザーが複数の組織に所属している場合は対話的に選択を求める。
+選択結果は `organization_config.json` に保存され、次回以降は自動で使用される。
+
+**組織ID解決の優先順位:**
+1. `--organization-id` CLI / `ORGANIZATION_ID` env var
+2. `organization_config.json`（端末保存）
+3. サーバーから組織一覧取得 → 複数なら対話的選択
+4. JWT内のデフォルト組織
+
+組織設定をリセットするには `organization_config.json` を削除する。
 
 ---
 

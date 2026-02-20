@@ -93,6 +93,10 @@ pub struct Config {
     )]
     pub google_auth_worker_url: String,
 
+    /// Organization ID override (端末の保存設定より優先)
+    #[arg(long, env = "ORGANIZATION_ID")]
+    pub organization_id: Option<String>,
+
     /// Local directory path to monitor (enables local mode, skips SMB mount)
     #[arg(long, value_name = "PATH")]
     pub local_path: Option<std::path::PathBuf>,
