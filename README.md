@@ -39,6 +39,47 @@ smb-watch.exe `
 | `--dry-run` | `false` | - | アップロードを行わずに検出のみ実行 |
 | `--since` | - | - | 指定した RFC3339 タイムスタンプ以降のファイルを対象にする |
 | `--log-level` | `info` | - | ログレベル（trace / debug / info / warn / error） |
+| `--local-path` | - | - | ローカルディレクトリを監視（SMB マウントをスキップ） |
+
+### 認証オプション
+
+Worker 経由のユーザー名/パスワード認証か、Google OAuth 認証のいずれかを使用します。両方を同時に指定することはできません。
+
+**ユーザー名/パスワード認証:**
+
+| オプション | 環境変数 | 説明 |
+|---|---|---|
+| `--auth-user` | `SMB_WATCH_AUTH_USER` | Worker ログインユーザー名 |
+| `--auth-pass` | `SMB_WATCH_AUTH_PASS` | Worker ログインパスワード |
+| `--auth-url` | `SMB_WATCH_AUTH_URL` | Worker ログイン URL |
+
+3 つとも指定するか、全て省略してください。
+
+**Google OAuth 認証（デフォルト）:**
+
+| オプション | 環境変数 | 説明 |
+|---|---|---|
+| `--google-client-id` | `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID |
+| `--google-client-secret` | `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret |
+| `--google-auth-worker-url` | `SMB_WATCH_UPLOAD_WORKER_URL` | smb-upload-worker の URL |
+
+認証オプションを省略すると Google OAuth Device Flow で認証します。ブラウザで Google アカウントにログインし、表示されたコードを入力してください。
+
+### 組織選択
+
+Google OAuth 認証時、ユーザーが複数の組織に所属している場合は対話的に組織を選択します。
+
+| オプション | 環境変数 | 説明 |
+|---|---|---|
+| `--organization-id` | `ORGANIZATION_ID` | 組織 ID を直接指定（保存設定より優先） |
+
+**組織 ID の解決順序:**
+1. `--organization-id` / `ORGANIZATION_ID` 環境変数
+2. `organization_config.json`（端末に保存された前回の選択）
+3. サーバーから組織一覧を取得し、複数あれば対話的に選択
+4. JWT 内のデフォルト組織（フォールバック）
+
+選択結果は `organization_config.json` に保存され、次回以降は自動で使用されます。リセットするには `organization_config.json` を削除してください。
 
 パスワードなどの機密情報は環境変数での指定を推奨します。
 
@@ -58,6 +99,8 @@ smb-watch.exe `
 |---|---|
 | `last_run.txt` | 実行履歴。次回スキャンの基準時刻として使用される |
 | `failed_files.txt` | アップロードに失敗したファイルの一覧 |
+| `organization_config.json` | 選択した組織の設定（Google OAuth 時） |
+| `google_token_cache.json` | Google OAuth トークンキャッシュ |
 
 ## 要件
 
