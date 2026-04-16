@@ -28,9 +28,9 @@ pub struct Config {
     #[arg(long, env = "SMB_DOMAIN", default_value = "")]
     pub smb_domain: String,
 
-    /// HTTP upload base URL
-    #[arg(long, env = "UPLOAD_URL", default_value = "https://nuxt-pwa-carins.mtamaramu.com")]
-    pub upload_url: String,
+    /// rust-alc-api のベース URL
+    #[arg(long, env = "ALC_API_URL", default_value = "https://rust-alc-api-566bls5vfq-an.a.run.app")]
+    pub alc_api_url: String,
 
     /// Path to state file storing last run timestamp
     #[arg(long, default_value = "last_run.txt")]
@@ -53,24 +53,11 @@ pub struct Config {
     #[arg(long, value_name = "DATETIME", value_parser = parse_since)]
     pub since: Option<DateTime<Utc>>,
 
-    /// Auth username (Worker login)
-    #[arg(long, env = "SMB_WATCH_AUTH_USER")]
-    pub auth_user: Option<String>,
-
-    /// Auth password (Worker login)
-    #[arg(long, env = "SMB_WATCH_AUTH_PASS", hide_env_values = true)]
-    pub auth_pass: Option<String>,
-
-    /// Auth login URL (e.g. https://smb-upload-worker.xxx.workers.dev/auth/login)
-    #[arg(long, env = "SMB_WATCH_AUTH_URL")]
-    pub auth_url: Option<String>,
-
     /// Google OAuth 2.0 Client ID (Device Flow 認証用)
     #[arg(
         long,
         env = "GOOGLE_CLIENT_ID",
         default_value = env!("DEFAULT_GOOGLE_CLIENT_ID"),
-        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
     )]
     pub google_client_id: String,
 
@@ -80,22 +67,8 @@ pub struct Config {
         env = "GOOGLE_CLIENT_SECRET",
         default_value = env!("DEFAULT_GOOGLE_CLIENT_SECRET"),
         hide_env_values = true,
-        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
     )]
     pub google_client_secret: String,
-
-    /// smb-upload-worker のベース URL (Google OAuth 認証用)
-    #[arg(
-        long,
-        env = "SMB_WATCH_UPLOAD_WORKER_URL",
-        default_value = env!("DEFAULT_WORKER_URL"),
-        conflicts_with_all = ["auth_user", "auth_pass", "auth_url"]
-    )]
-    pub google_auth_worker_url: String,
-
-    /// Organization ID override (端末の保存設定より優先)
-    #[arg(long, env = "ORGANIZATION_ID")]
-    pub organization_id: Option<String>,
 
     /// Local directory path to monitor (enables local mode, skips SMB mount)
     #[arg(long, value_name = "PATH")]

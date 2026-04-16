@@ -16,7 +16,7 @@ fn main() {
     }
 
     // 環境変数から（CI/CD用、.env.build より優先）
-    for key in &["DEFAULT_GOOGLE_CLIENT_ID", "DEFAULT_GOOGLE_CLIENT_SECRET", "DEFAULT_WORKER_URL"] {
+    for key in &["DEFAULT_GOOGLE_CLIENT_ID", "DEFAULT_GOOGLE_CLIENT_SECRET"] {
         if let Ok(val) = std::env::var(key) {
             println!("cargo:rustc-env={}={}", key, val);
         }

@@ -1,7 +1,6 @@
 mod auth;
 mod cli;
 mod google_auth;
-mod org_config;
 mod scanner;
 mod smb;
 mod state;
@@ -56,11 +55,10 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
     let mut retry_candidates = state::load_failed_list(&failed_list_path)?;
     if !retry_candidates.is_empty() {
         info!("{} file(s) pending retry from previous run", retry_candidates.len());
-        // Remove retry candidates that no longer exist on the share
         retry_candidates.retain(|p| p.exists());
     }
 
-    // 2. Resolve "since" threshold: --since flag takes precedence over last_run.txt
+    // 2. Resolve "since" threshold
     let since: SystemTime = if let Some(dt) = config.since {
         info!("Using --since override: {}", dt.to_rfc3339());
         SystemTime::from(dt)
@@ -101,52 +99,22 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
     } else {
         let client = uploader::build_client()?;
 
-        // Authenticate if auth options are provided
-        let (token, org_id) = match (&config.auth_user, &config.auth_pass, &config.auth_url) {
-            // 既存のパスワード認証モード
-            (Some(user), Some(pass), Some(url)) => {
-                let (t, id) = auth::login(&client, url, user, pass).await?;
-                (Some(t), Some(id))
-            }
-            // 認証なし → Google OAuth + 組織選択
-            (None, None, None) => {
-                let id_token = google_auth::device_flow_get_id_token(&client, &config.google_client_id, &config.google_client_secret).await?;
-                let google_auth_url = format!("{}/auth/google", config.google_auth_worker_url.trim_end_matches('/'));
-                let (t, jwt_org_id) = auth::login_with_google(&client, &google_auth_url, &id_token).await?;
+        // Google Device Flow → rust-alc-api で認証
+        let id_token = google_auth::device_flow_get_id_token(
+            &client,
+            &config.google_client_id,
+            &config.google_client_secret,
+        ).await?;
 
-                // 組織解決: CLI > 端末保存 > サーバー取得+選択 > JWTデフォルト
-                let resolved_org = org_config::resolve_organization(
-                    &client,
-                    config.organization_id.as_deref(),
-                    config.google_auth_worker_url.trim_end_matches('/'),
-                    &t,
-                    &jwt_org_id,
-                ).await?;
+        let auth_url = format!("{}/api/auth/google", config.alc_api_url.trim_end_matches('/'));
+        let (token, tenant_id) = auth::login_with_google(&client, &auth_url, &id_token).await?;
+        info!("Authenticated: tenant_id={}", tenant_id);
 
-                (Some(t), Some(resolved_org))
-            }
-            _ => anyhow::bail!(
-                "--auth-user, --auth-pass, --auth-url must all be specified together"
-            ),
-        };
-
-        let upload_url = match (&token, &config.auth_url) {
-            (Some(_), None) => {
-                // Google OAuth モード: worker の /upload へ
-                format!("{}/upload", config.google_auth_worker_url.trim_end_matches('/'))
-            }
-            (Some(_), Some(_)) => {
-                // パスワード認証モード: upload_url の /upload へ
-                format!("{}/upload", config.upload_url.trim_end_matches('/'))
-            }
-            _ => {
-                format!("{}/api/recieve", config.upload_url.trim_end_matches('/'))
-            }
-        };
+        let upload_url = format!("{}/api/files", config.alc_api_url.trim_end_matches('/'));
 
         for (i, path) in all_files.iter().enumerate() {
             info!("Uploading {}/{}: {}", i + 1, files_found, path.display());
-            match uploader::upload_file(&client, &upload_url, path, token.as_deref(), org_id.as_deref()).await {
+            match uploader::upload_file(&client, &upload_url, path, &token).await {
                 Ok(()) => uploaded += 1,
                 Err(e) => {
                     warn!("Failed: {}: {:#}", path.display(), e);
@@ -162,11 +130,10 @@ async fn run(config: &cli::Config, scan_root: &std::path::Path, scan_start: Syst
 
     let failed_count = new_failed.len();
 
-    // 4. Save updated failed list (empty = delete the file)
+    // 4. Save updated failed list
     state::save_failed_list(&failed_list_path, &new_failed)?;
 
-    // 5. Always advance last_run to scan_start so new files aren't missed.
-    //    Failed files are tracked separately in failed_files.txt.
+    // 5. Record run
     state::append_run_record(
         &config.state_file,
         &state::RunRecord {
