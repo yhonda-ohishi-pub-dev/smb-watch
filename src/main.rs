@@ -1,5 +1,6 @@
 mod cli;
 mod device_auth;
+mod notify;
 mod pair;
 mod scanner;
 #[cfg(windows)]
@@ -147,6 +148,20 @@ async fn run(config: &cli::Config, source: &mut FileSource, scan_start: SystemTi
 
         if !new_failed.is_empty() {
             warn!("{} file(s) failed; will retry next run", new_failed.len());
+        }
+
+        // 走行結果を LINE WORKS に通知する (nuxt-pwa-carins#54)。
+        // この else ブロック = files_found > 0 かつ !dry_run に入った時だけ通る。
+        // 「検出 0 件は無音」「--dry-run は送らない」が構造で保証される。
+        // 通知の失敗はアップロード本体を落とさない (notify 側で握って warn!)。
+        if notify::should_notify(files_found, uploaded, new_failed.len()) {
+            // 出所表記は const に持たず毎回 config から導出する
+            // (--smb-host/--smb-share/--smb-path は設定可能なので写すとドリフトする)。
+            let label = notify::source_label(config);
+            let text = notify::build_message(&label, files_found, uploaded, &new_failed);
+            notify::notify_run_result(&client, &config.auth_url, &token, &text).await;
+        } else {
+            info!("Nothing to report; skipping notification");
         }
     }
 
